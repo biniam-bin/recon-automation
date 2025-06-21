@@ -7,12 +7,12 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install tools with individual error handling
-# 1. Subfinder (with explicit version)
-RUN git clone https://github.com/projectdiscovery/subfinder.git \
-    && cd subfinder/v2/cmd/subfinder \
-    && go build -o /go/bin/subfinder . \
-    && cd / && rm -rf /go/pkg/mod /go/src
+# Install tools using pre-built binaries where needed
+# 1. Subfinder (using pre-built binary)
+RUN wget https://github.com/projectdiscovery/subfinder/releases/download/v2.6.3/subfinder_2.6.3_linux_amd64.zip \
+    && unzip subfinder_2.6.3_linux_amd64.zip \
+    && mv subfinder /go/bin/ \
+    && rm subfinder_2.6.3_linux_amd64.zip
 
 # 2. Assetfinder
 RUN go install github.com/tomnomnom/assetfinder@latest
@@ -29,10 +29,11 @@ RUN go install github.com/projectdiscovery/katana/cmd/katana@latest
 # 6. Gospider
 RUN go install github.com/jaeles-project/gospider@latest
 
-# 7. Amass (built from source)
-RUN git clone https://github.com/OWASP/Amass.git \
-    && cd Amass \
-    && go install ./...
+# 7. Amass (using pre-built binary)
+RUN wget https://github.com/OWASP/Amass/releases/download/v4.2.0/amass_linux_amd64.zip \
+    && unzip amass_linux_amd64.zip \
+    && mv amass_linux_amd64/amass /go/bin/ \
+    && rm -rf amass_linux_amd64*
 
 # Stage 2: Build Findomain (Rust tool)
 FROM rust:1.70 as findomainbuilder
