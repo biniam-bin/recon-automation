@@ -1,25 +1,40 @@
 # Stage 1: Build Go tools
 FROM golang:1.21 as gobuilder
 
-# Install basic dependencies for Go tools
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install each tool separately with error handling
-RUN go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+# Install tools with individual error handling
+# 1. Subfinder (with explicit version)
+RUN git clone https://github.com/projectdiscovery/subfinder.git \
+    && cd subfinder/v2/cmd/subfinder \
+    && go build -o /go/bin/subfinder . \
+    && cd / && rm -rf /go/pkg/mod /go/src
+
+# 2. Assetfinder
 RUN go install github.com/tomnomnom/assetfinder@latest
+
+# 3. GAU
 RUN go install github.com/lc/gau/v2/cmd/gau@latest
+
+# 4. Waybackurls
 RUN go install github.com/tomnomnom/waybackurls@latest
+
+# 5. Katana
 RUN go install github.com/projectdiscovery/katana/cmd/katana@latest
+
+# 6. Gospider
 RUN go install github.com/jaeles-project/gospider@latest
 
-# Special handling for Amass (which often causes issues)
+# 7. Amass (built from source)
 RUN git clone https://github.com/OWASP/Amass.git \
     && cd Amass \
     && go install ./...
 
-# Special handling for Findomain (Rust tool)
+# Stage 2: Build Findomain (Rust tool)
 FROM rust:1.70 as findomainbuilder
 RUN cargo install --git https://github.com/Findomain/Findomain.git
 
